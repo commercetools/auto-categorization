@@ -1,0 +1,154 @@
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 commercetools GmbH and the commercetools-labs contributors
+ * Freely available, AS IS and UNSUPPORTED. See LICENSE.
+ */
+
+import {
+  Condition,
+  NULLARY_OPERATORS,
+  OPERATORS_BY_VALUE_KIND,
+  Rule,
+  RuleDraft,
+  ValueKind,
+} from './types';
+
+/**
+ * Rule validation.
+ *
+ * A rule arrives from a browser, so it is untrusted input that will later be
+ * run against the whole catalog. Everything the engine relies on is checked
+ * once here, at the write, rather than being discovered mid-sweep.
+ */
+
+export class RuleValidationError extends Error {
+  readonly issues: string[];
+
+  constructor(issues: string[]) {
+    super(`Invalid rule: ${issues.join('; ')}`);
+    this.name = 'RuleValidationError';
+    this.issues = issues;
+  }
+}
+
+/** Custom Object keys accept these characters, between 2 and 256 of them. */
+const KEY_PATTERN = /^[A-Za-z0-9_-]{2,256}$/;
+const MAX_CONDITIONS = 25;
+
+export function validateRule(draft: RuleDraft): string[] {
+  const issues: string[] = [];
+
+  if (!draft.key || !KEY_PATTERN.test(draft.key)) {
+    issues.push(
+      'key must be 2-256 characters of letters, digits, underscore or hyphen'
+    );
+  }
+  if (!draft.name || draft.name.trim().length === 0) {
+    issues.push('name is required');
+  }
+  if (!draft.categoryId || draft.categoryId.trim().length === 0) {
+    issues.push('categoryId is required');
+  }
+  if (draft.match !== 'all' && draft.match !== 'any') {
+    issues.push('match must be "all" or "any"');
+  }
+  if (!Array.isArray(draft.conditions)) {
+    issues.push('conditions must be an array');
+    return issues;
+  }
+  if (draft.conditions.length === 0) {
+    issues.push('a rule needs at least one condition');
+  }
+  if (draft.conditions.length > MAX_CONDITIONS) {
+    issues.push(`a rule takes at most ${MAX_CONDITIONS} conditions`);
+  }
+
+  draft.conditions.forEach((condition, index) => {
+    for (const issue of validateCondition(condition)) {
+      issues.push(`condition ${index + 1}: ${issue}`);
+    }
+  });
+
+  return issues;
+}
+
+function validateCondition(condition: Condition): string[] {
+  const issues: string[] = [];
+
+  if (!condition?.field?.kind) {
+    return ['field is required'];
+  }
+
+  const valueKind = condition.field.valueKind;
+  const allowed = OPERATORS_BY_VALUE_KIND[valueKind as ValueKind];
+  if (!allowed) {
+    issues.push(`unknown value kind "${valueKind}"`);
+    return issues;
+  }
+  if (!allowed.includes(condition.operator)) {
+    issues.push(
+      `operator "${condition.operator}" does not apply to a ${valueKind} field`
+    );
+  }
+  if (condition.field.kind === 'attribute' && !condition.field.attributeName) {
+    issues.push('an attribute condition needs attributeName');
+  }
+
+  const needsValue = !NULLARY_OPERATORS.includes(condition.operator);
+  if (needsValue && (condition.value === undefined || condition.value === '')) {
+    issues.push(`operator "${condition.operator}" needs a value`);
+  }
+
+  if (needsValue && valueKind === 'number' && !Number.isFinite(Number(condition.value))) {
+    issues.push('value must be a number');
+  }
+
+  if (
+    needsValue &&
+    (condition.operator === 'withinLastDays' ||
+      condition.operator === 'withinLastHours')
+  ) {
+    const window = Number(condition.value);
+    if (!Number.isFinite(window) || window <= 0) {
+      issues.push('a time window must be a positive number');
+    }
+  }
+
+  if (
+    needsValue &&
+    (condition.operator === 'before' || condition.operator === 'after') &&
+    !Number.isFinite(Date.parse(String(condition.value)))
+  ) {
+    issues.push('value must be a date');
+  }
+
+  if (condition.operator === 'matchesRegex') {
+    try {
+      new RegExp(String(condition.value));
+    } catch {
+      issues.push('value must be a valid regular expression');
+    }
+  }
+
+  return issues;
+}
+
+export function assertValidRule(draft: RuleDraft): void {
+  const issues = validateRule(draft);
+  if (issues.length) throw new RuleValidationError(issues);
+}
+
+/** Normalize a validated draft into the rule that gets stored. */
+export function toRule(draft: RuleDraft, now: Date, existing?: Rule): Rule {
+  return {
+    key: draft.key,
+    name: draft.name.trim(),
+    categoryId: draft.categoryId,
+    enabled: draft.enabled !== false,
+    match: draft.match,
+    conditions: draft.conditions,
+    removeWhenNoLongerMatching: draft.removeWhenNoLongerMatching !== false,
+    createdAt: existing?.createdAt ?? now.toISOString(),
+    updatedAt: now.toISOString(),
+  };
+}

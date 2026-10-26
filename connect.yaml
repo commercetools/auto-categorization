@@ -1,0 +1,247 @@
+deployAs:
+  # The synchronous half: a Product API Extension.
+  #
+  # commercetools calls this inside every product create and update, after
+  # the caller's own actions and before anything is persisted, and applies
+  # whatever it returns to the same write. A product therefore lands in its
+  # rule-driven categories in one version bump, with no window in which it
+  # is in the wrong place.
+  #
+  # It shares a repository with the rules API but not a container, because
+  # this one answers inside a two-second budget and that one walks the
+  # catalog for minutes. Connect gives each application its own container,
+  # so a Process now pass cannot slow a merchandiser's save.
+  - name: product-extension
+    applicationType: service
+    endpoint: /product-extension
+    scripts:
+      postDeploy: npm install && npm run build && npm run connector:post-deploy
+      preUndeploy: npm install && npm run build && npm run connector:pre-undeploy
+    configuration:
+      standardConfiguration:
+        - key: CTP_REGION
+          description: commercetools Composable Commerce API region
+          required: true
+          default: 'us-central1.gcp'
+        - key: RULE_CACHE_SECONDS
+          description: >-
+            How long a read of the rules is reused before the next product
+            write reads them again. Keeps a bulk import from turning one
+            Custom Object query per product into the thing that blows the
+            Extension's time budget. Set to 0 to read every time.
+          required: false
+          default: '10'
+        - key: EXTENSION_TIMEOUT_MS
+          description: >-
+            How long commercetools waits for this endpoint before giving up
+            on it. 2000 is the platform default; 10000 is the self-service
+            maximum. A timeout fails the product write, so leave headroom.
+          required: false
+          default: '2000'
+      securedConfiguration:
+        - key: EXTENSION_AUTH_SECRET
+          description: >-
+            A random string of at least 24 characters. The Extension is
+            registered to present it on every call, and the endpoint refuses
+            anything that does not. Generate one per installation; it is
+            never displayed again.
+          required: true
+
+  # The Merchant Center's backend: rule CRUD, the field catalog, dry-run
+  # preview, and the Process now pass.
+  #
+  # The browser never reaches it directly. Both Merchant Center surfaces
+  # call it through the Merchant Center API Gateway's /proxy/forward-to,
+  # which checks the signed-in user has access to the Project and forwards
+  # the request with a token addressed to this application's origin.
+  - name: rules-api
+    applicationType: service
+    endpoint: /rules-api
+    configuration:
+      standardConfiguration:
+        - key: CTP_REGION
+          description: commercetools Composable Commerce API region
+          required: true
+          default: 'us-central1.gcp'
+        - key: CLOUD_IDENTIFIER
+          description: >-
+            Merchant Center API region, which is the issuer of the session
+            token this API verifies. Must match the Project's region:
+            gcp-us, gcp-eu, gcp-au, aws-eu, aws-us, aws-fra or aws-ohio.
+          required: true
+          default: 'gcp-us'
+        - key: PUBLIC_API_URL
+          description: >-
+            Origin the Merchant Center reaches this API at, when it is not
+            the one Connect provides. Leave unset on a Connect deployment —
+            CONNECT_SERVICE_URL is used instead. Set it when developing
+            against a tunnel.
+          required: false
+        - key: VIEW_PERMISSION
+          description: >-
+            Permission a Merchant Center user needs to read rules. Derived
+            from the Custom Application's entry point path, so it changes
+            with ENTRY_POINT_URI_PATH.
+          required: false
+          default: 'canViewAutoCategorization'
+        - key: MANAGE_PERMISSION
+          description: >-
+            Permission a Merchant Center user needs to write a rule or start
+            a run.
+          required: false
+          default: 'canManageAutoCategorization'
+        - key: SWEEP_PAGE_SIZE
+          description: Products read per page during a catalog pass.
+          required: false
+          default: '100'
+        - key: SWEEP_MAX_PAGES
+          description: >-
+            Pages one Process now request walks before handing a cursor back
+            to the browser, which calls again. Smaller means a smoother
+            progress bar and more round trips.
+          required: false
+          default: '10'
+        - key: SWEEP_BUDGET_SECONDS
+          description: >-
+            Seconds one Process now request spends before handing back a
+            cursor, whatever the page budget says.
+          required: false
+          default: '20'
+
+  # The asynchronous half, for the one thing the Extension cannot see.
+  #
+  # A product write triggers the Extension. A rule change does not trigger
+  # anything — the products that should move are scattered across the
+  # catalog. This registers a Change Subscription on categories so that
+  # touching a category with rules queues a catalog pass for it.
+  - name: category-event
+    applicationType: event
+    endpoint: /category-event
+    scripts:
+      postDeploy: npm install && npm run build && npm run connector:post-deploy
+      preUndeploy: npm install && npm run build && npm run connector:pre-undeploy
+    configuration:
+      standardConfiguration:
+        - key: CTP_REGION
+          description: commercetools Composable Commerce API region
+          required: true
+          default: 'us-central1.gcp'
+
+  # Drains the sweep queue, and reconciles the whole catalog on an interval.
+  #
+  # The schedule is the default cadence, not a promise: a run that reaches
+  # its budget checkpoints a cursor and the next tick resumes there, and a
+  # run that starts while another is going takes no lease and exits.
+  - name: sweep-job
+    applicationType: job
+    endpoint: /sweep-job
+    properties:
+      schedule: '*/5 * * * *'
+    configuration:
+      standardConfiguration:
+        - key: CTP_REGION
+          description: commercetools Composable Commerce API region
+          required: true
+          default: 'us-central1.gcp'
+        - key: SWEEP_PAGE_SIZE
+          description: Products read per page during a catalog pass.
+          required: false
+          default: '100'
+        - key: SWEEP_BUDGET_MINUTES
+          description: >-
+            Minutes a run works before checkpointing. The application itself
+            is stopped at 30, so this leaves room to save progress and hand
+            the rest to the next tick.
+          required: false
+          default: '25'
+        - key: FULL_RECONCILE_MINUTES
+          description: >-
+            How often to re-apply every rule across the catalog even with
+            nothing queued. This is the backstop for a rule written straight
+            through the API, where nothing signalled the change. Set to 0 to
+            switch it off.
+          required: false
+          default: '60'
+        - key: JOB_LOCK_TTL_MINUTES
+          description: >-
+            Lease length on the run lock. Longer than the 30-minute
+            application timeout, so a killed run's lease expires on its own
+            rather than wedging the schedule.
+          required: false
+          default: '35'
+
+  # The rule builder: every rule in the Project, on its own page.
+  #
+  # APPLICATION_URL is supplied by Connect and must not be declared here.
+  # The keys below feed the ${env:...} placeholders in
+  # merchant-center-custom-application/custom-application-config.mjs.
+  - name: merchant-center-custom-application
+    applicationType: merchant-center-custom-application
+    configuration:
+      standardConfiguration:
+        - key: CUSTOM_APPLICATION_ID
+          description: >-
+            Application ID from Organizations > Custom Applications. Not a
+            name you choose — the Merchant Center assigns it at registration.
+          required: true
+        - key: CLOUD_IDENTIFIER
+          description: Merchant Center API region the application talks to.
+          required: true
+          default: 'gcp-us'
+        - key: ENTRY_POINT_URI_PATH
+          description: >-
+            Must match the entry point path given at registration. It cannot
+            be changed afterwards, and a mismatch 404s every in-app link.
+            It also determines the permission names the rules API checks.
+          required: true
+          default: 'auto-categorization'
+        - key: RULES_API_URL
+          description: >-
+            Origin of the rules-api application in this same deployment.
+            Read it from the deployment after the first deploy and set it
+            with a redeploy — Connect assigns the URL, so it cannot be known
+            before then.
+          required: true
+
+  # The same rules, in the place a merchandiser is already standing: a panel
+  # on the category they have open.
+  - name: merchant-center-custom-view
+    applicationType: merchant-center-custom-view
+    configuration:
+      standardConfiguration:
+        - key: CUSTOM_VIEW_ID
+          description: >-
+            Custom View ID from Organizations > Custom Views. Assigned at
+            registration.
+          required: true
+        - key: CLOUD_IDENTIFIER
+          description: Merchant Center API region the view talks to.
+          required: true
+          default: 'gcp-us'
+        - key: RULES_API_URL
+          description: >-
+            Origin of the rules-api application in this same deployment.
+          required: true
+
+# Least privilege, and no more. The platform generates an API client with
+# exactly these at install and injects its credentials; nothing here ever
+# needs an admin client.
+inheritAs:
+  apiClient:
+    scopes:
+      # Read products to evaluate rules; write them to assign categories.
+      - manage_products
+      # Resolve rule targets and show category names.
+      - view_categories
+      # Build the rule builder's field list from the Project's own attributes.
+      - view_product_types
+      # Read the Project's currencies and languages, so price conditions
+      # know the minor unit and the builder can name locales. Every
+      # application degrades gracefully without it.
+      - view_project_settings
+      # Rules, run history, the sweep queue and the job lease.
+      - manage_key_value_documents
+      # Register the Product API Extension in post-deploy.
+      - manage_extensions
+      # Register the category Change Subscription in post-deploy.
+      - manage_subscriptions

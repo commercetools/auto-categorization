@@ -1,0 +1,35 @@
+{
+  "name": "@commercetools-labs/common-connect",
+  "version": "1.0.0",
+  "description": "Rule model, matching engine, rule store and catalog sweep shared by the connector's applications",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "private": true,
+  "scripts": {
+    "build": "rimraf ./dist && tsc",
+    "lint": "eslint . --ext .ts",
+    "prettier": "prettier --write '**/*.{js,ts}'",
+    "test": "jest --config jest.config.cjs",
+    "prepare": "npm run build"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@commercetools/platform-sdk": "^8.13.0"
+  },
+  "devDependencies": {
+    "@tsconfig/recommended": "^1.0.3",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.3.3",
+    "rimraf": "^5.0.10",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.5.4"
+  },
+  "files": [
+    "dist"
+  ]
+}

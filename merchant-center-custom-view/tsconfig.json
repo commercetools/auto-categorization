@@ -1,0 +1,15 @@
+{
+  "extends": "@commercetools-frontend/application-config/tsconfig-mc-app.json",
+  "compilerOptions": {
+    "typeRoots": ["@types", "@types-extensions", "node_modules/@types"],
+    // Allow tsc to resolve dependencies of `@types` packages in the way pnpm sets up the `node_modules`.
+    "preserveSymlinks": false,
+    // Check this application's own code, and take published type
+    // declarations as given. Several packages in the Merchant Center
+    // dependency tree ship declarations that do not typecheck on their
+    // own, and without this the only errors `npm run typecheck` reports
+    // are theirs — which makes the check useless for finding ours.
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}

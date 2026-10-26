@@ -1,0 +1,17 @@
+{
+  "name": "@commercetools-labs/auto-categorization-tools",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Developer scripts. Not deployed: nothing in connect.yaml references this folder.",
+  "scripts": {
+    "live-check": "node live-check.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@commercetools/platform-sdk": "^8.13.0",
+    "@commercetools/ts-client": "^4.1.0",
+    "common-connect": "file:../common-connect",
+    "dotenv": "^16.4.5"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "@commercetools-labs/auto-categorization",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rule-driven category membership for commercetools, as a Connect connector",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "install:all": "npm --prefix common-connect install && npm --prefix product-extension install && npm --prefix rules-api install && npm --prefix category-event install && npm --prefix sweep-job install && npm --prefix merchant-center-custom-application install && npm --prefix merchant-center-custom-view install && npm --prefix tools install",
+    "build": "npm --prefix common-connect run build && npm run sync:shared && npm --prefix product-extension run build && npm --prefix rules-api run build && npm --prefix category-event run build && npm --prefix sweep-job run build",
+    "typecheck": "npm --prefix product-extension run typecheck && npm --prefix rules-api run typecheck && npm --prefix category-event run typecheck && npm --prefix sweep-job run typecheck && npm --prefix merchant-center-custom-application run typecheck && npm --prefix merchant-center-custom-view run typecheck",
+    "test": "npm --prefix common-connect test && npm --prefix product-extension test && npm --prefix rules-api test && npm --prefix category-event test && npm --prefix sweep-job test",
+    "lint": "npm --prefix common-connect run lint && npm --prefix product-extension run lint && npm --prefix rules-api run lint && npm --prefix category-event run lint && npm --prefix sweep-job run lint",
+    "build:mc": "npm --prefix merchant-center-custom-application run build && npm --prefix merchant-center-custom-view run build",
+    "predeploy": "npm run build && npm run check:shared && npm run test && npm run lint",
+    "sync:shared": "node tools/sync-shared.mjs",
+    "check:shared": "node tools/sync-shared.mjs --check",
+    "audit": "npm --prefix product-extension audit --omit=dev && npm --prefix rules-api audit --omit=dev && npm --prefix category-event audit --omit=dev && npm --prefix sweep-job audit --omit=dev",
+    "simulate:connect": "tools/simulate-connect-build.sh",
+    "preflight": "npm run predeploy && npm run audit && npm run simulate:connect"
+  }
+}

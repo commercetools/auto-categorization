@@ -1,0 +1,50 @@
+{
+  "name": "@commercetools-labs/auto-categorization-product-extension",
+  "description": "Product API Extension that assigns rule-driven categories inside the product write itself",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node build/index.js",
+    "gcp-build": "tsc",
+    "start:dev": "concurrently -k \"tsc --watch\" \"nodemon -q build/index.js\"",
+    "build": "rimraf ./build && tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts",
+    "prettier": "prettier --write '**/*.{js,ts}'",
+    "test": "npm run build && jest --config jest.config.cjs",
+    "test:watch": "jest --watch",
+    "connector:post-deploy": "node build/connector/post-deploy.js",
+    "connector:pre-undeploy": "node build/connector/pre-undeploy.js"
+  },
+  "author": "commercetools",
+  "license": "MIT",
+  "devDependencies": {
+    "@tsconfig/recommended": "^1.0.3",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.0",
+    "@types/supertest": "^6.0.2",
+    "@types/validator": "^13.12.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.4",
+    "prettier": "^3.3.3",
+    "rimraf": "^5.0.10",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@commercetools/platform-sdk": "^8.13.0",
+    "@commercetools/ts-client": "^4.1.0",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "validator": "^13.12.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
