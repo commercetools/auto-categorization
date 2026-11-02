@@ -5,7 +5,7 @@
   "description": "Rule-driven category membership for commercetools, as a Connect connector",
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   },
   "scripts": {
     "install:all": "npm --prefix common-connect install && npm --prefix product-extension install && npm --prefix rules-api install && npm --prefix category-event install && npm --prefix sweep-job install && npm --prefix merchant-center-custom-application install && npm --prefix merchant-center-custom-view install && npm --prefix tools install",
