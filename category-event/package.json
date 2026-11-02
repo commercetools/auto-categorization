@@ -45,6 +45,6 @@
   "description": "Queues a catalog sweep when a category with rules changes",
   "author": "commercetools",
   "engines": {
-    "node": ">=20"
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   }
 }
