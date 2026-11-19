@@ -8,29 +8,30 @@
  * Auto-categorization, as a panel on the category a merchandiser is
  * already looking at.
  *
- * Every deploy-time value is an ${env:...} placeholder that Connect fills
- * from connect.yaml, so the same repository installs into any Project
- * without an edit.
+ * Every deploy-time value is read from the environment that Connect fills from
+ * connect.yaml, with a fallback so the file always evaluates. A `${env:...}`
+ * placeholder would throw at build time when its variable is unset.
  *
  * @type {import('@commercetools-frontend/application-config').ConfigOptionsForCustomView}
  */
 const config = {
   name: 'Auto-categorization',
-  cloudIdentifier: '${env:CLOUD_IDENTIFIER}',
+  cloudIdentifier: process.env.CLOUD_IDENTIFIER || 'gcp-us',
   env: {
     development: {
       initialProjectKey: 'my-project-key',
       // Render against a category details page locally, which is the only
       // place this panel means anything.
-      hostUriPath: '/my-project-key/categories/00000000-0000-0000-0000-000000000000/general',
+      hostUriPath:
+        '/my-project-key/categories/00000000-0000-0000-0000-000000000000/general',
     },
     production: {
-      customViewId: '${env:CUSTOM_VIEW_ID}',
-      url: '${env:APPLICATION_URL}',
+      customViewId: process.env.CUSTOM_VIEW_ID || '',
+      url: process.env.APPLICATION_URL || '',
     },
   },
   additionalEnv: {
-    rulesApiUrl: '${env:RULES_API_URL}',
+    rulesApiUrl: process.env.RULES_API_URL || '',
   },
   // The default group carries no scopes: a Custom View's default
   // permissions are named plainly View and Manage, and a rules API that
@@ -49,9 +50,7 @@ const config = {
       manage: ['manage_products', 'manage_key_value_documents'],
     },
   ],
-  labelAllLocales: [
-    { locale: 'en', value: 'Auto-categorization' },
-  ],
+  labelAllLocales: [{ locale: 'en', value: 'Auto-categorization' }],
   type: 'CustomPanel',
   typeSettings: {
     size: 'LARGE',

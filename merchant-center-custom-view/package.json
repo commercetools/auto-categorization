@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "build": "mc-scripts build",
-    "start": "mc-scripts start",
+    "start": "mc-scripts compile-html && serve ./public -p 8080 --config ../serve.json",
+    "start:dev": "mc-scripts start",
     "compile-html": "mc-scripts compile-html",
     "compile-html:local": "MC_APP_ENV=development mc-scripts compile-html --transformer @commercetools-frontend/mc-dev-authentication/transformer-local.js",
     "start:prod:local": "npm run compile-html:local && mc-scripts serve",
@@ -82,6 +83,7 @@
     "react-redux": "9.3.0",
     "react-router-dom": "5.3.4",
     "redux": "5.0.1",
+    "serve": "^14.2.6",
     "slate": "^0.123.0",
     "slate-history": "^0.115.0",
     "slate-hyperscript": "^0.115.0",
@@ -118,6 +120,9 @@
     "@types/react-router-dom": "<6",
     "headers-polyfill": "3.2.5",
     "nwsapi": "2.2.7"
+  },
+  "engines": {
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   },
   "license": "MIT",
   "overrides": {
