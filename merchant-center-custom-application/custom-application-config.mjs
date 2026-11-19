@@ -48,7 +48,10 @@ const config = {
     },
     production: {
       applicationId: process.env.CUSTOM_APPLICATION_ID || '',
-      url: process.env.APPLICATION_URL || '',
+      // appkit rejects an empty URL when it builds. The fallback lets the build
+      // validate; on a deployment Connect sets APPLICATION_URL, and the start
+      // command's compile-html bakes that real value into the served page.
+      url: process.env.APPLICATION_URL || 'https://mc-app-placeholder.example.com',
     },
   },
   additionalEnv: {

@@ -27,7 +27,10 @@ const config = {
     },
     production: {
       customViewId: process.env.CUSTOM_VIEW_ID || '',
-      url: process.env.APPLICATION_URL || '',
+      // appkit rejects an empty URL when it builds. The fallback lets the build
+      // validate; on a deployment Connect sets APPLICATION_URL, and the start
+      // command's compile-html bakes that real value into the served page.
+      url: process.env.APPLICATION_URL || 'https://mc-view-placeholder.example.com',
     },
   },
   additionalEnv: {
