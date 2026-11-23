@@ -250,20 +250,3 @@ application degrades gracefully without.
 are committed and `npm run check:shared` fails on drift. Vendored rather than
 a `file:` dependency because Connect builds an application from its own
 folder, where `../common-connect` does not exist.
-
-## Checks
-
-| Command | What it runs |
-|---|---|
-| `npm run install:all` | Every package |
-| `npm run predeploy` | Build, `check:shared`, unit tests, lint |
-| `npm run preflight` | `predeploy`, `npm audit --omit=dev` per application, and an isolated build of each |
-| `npm run simulate:connect` | Builds each application from its own folder with nothing above it, which is how Connect builds |
-| `npm run build:mc` | The two Merchant Center bundles. Needs the deploy-time env vars Connect supplies — see the README. |
-
-No CI. `predeploy` is the gate.
-
-`tools/` also holds scripts that drive a real Project — a live rule pass, a
-dry run of many rule shapes at once, an extension probe, a rule-shape matrix
-and a deployment verifier. Nothing in `connect.yaml` references the folder,
-so it is never deployed.
