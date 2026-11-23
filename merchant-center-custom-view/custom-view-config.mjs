@@ -8,15 +8,15 @@
  * Auto-categorization, as a panel on the category a merchandiser is
  * already looking at.
  *
- * Every deploy-time value is read from the environment that Connect fills from
- * connect.yaml, with a fallback so the file always evaluates. A `${env:...}`
- * placeholder would throw at build time when its variable is unset.
+ * Every deploy-time value is an ${env:...} placeholder that Connect fills
+ * from connect.yaml, so the same repository installs into any Project
+ * without an edit.
  *
  * @type {import('@commercetools-frontend/application-config').ConfigOptionsForCustomView}
  */
 const config = {
   name: 'Auto-categorization',
-  cloudIdentifier: process.env.CLOUD_IDENTIFIER || 'gcp-us',
+  cloudIdentifier: '${env:CLOUD_IDENTIFIER}',
   env: {
     development: {
       initialProjectKey: 'my-project-key',
@@ -26,15 +26,12 @@ const config = {
         '/my-project-key/categories/00000000-0000-0000-0000-000000000000/general',
     },
     production: {
-      customViewId: process.env.CUSTOM_VIEW_ID || '',
-      // appkit rejects an empty URL when it builds. The fallback lets the build
-      // validate; on a deployment Connect sets APPLICATION_URL, and the start
-      // command's compile-html bakes that real value into the served page.
-      url: process.env.APPLICATION_URL || 'https://mc-view-placeholder.example.com',
+      customViewId: '${env:CUSTOM_VIEW_ID}',
+      url: '${env:APPLICATION_URL}',
     },
   },
   additionalEnv: {
-    rulesApiUrl: process.env.RULES_API_URL || '',
+    rulesApiUrl: '${env:RULES_API_URL}',
   },
   // The default group carries no scopes: a Custom View's default
   // permissions are named plainly View and Manage, and a rules API that

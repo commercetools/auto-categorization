@@ -32,30 +32,27 @@ const PERMISSIONS = {
 /**
  * The rule builder, as a place of its own in the Merchant Center.
  *
- * Every deploy-time value is read from the environment that Connect fills from
- * connect.yaml, with a fallback so the file always evaluates. A `${env:...}`
- * placeholder would throw at build time when its variable is unset.
+ * Every deploy-time value is an ${env:...} placeholder that Connect fills
+ * from connect.yaml, so the same repository installs into any Project
+ * without an edit.
  *
  * @type {import('@commercetools-frontend/application-config').ConfigOptionsForCustomApplication}
  */
 const config = {
   name: 'Auto-categorization',
   entryPointUriPath,
-  cloudIdentifier: process.env.CLOUD_IDENTIFIER || 'gcp-us',
+  cloudIdentifier: '${env:CLOUD_IDENTIFIER}',
   env: {
     development: {
       initialProjectKey: 'my-project-key',
     },
     production: {
-      applicationId: process.env.CUSTOM_APPLICATION_ID || '',
-      // appkit rejects an empty URL when it builds. The fallback lets the build
-      // validate; on a deployment Connect sets APPLICATION_URL, and the start
-      // command's compile-html bakes that real value into the served page.
-      url: process.env.APPLICATION_URL || 'https://mc-app-placeholder.example.com',
+      applicationId: '${env:CUSTOM_APPLICATION_ID}',
+      url: '${env:APPLICATION_URL}',
     },
   },
   additionalEnv: {
-    rulesApiUrl: process.env.RULES_API_URL || '',
+    rulesApiUrl: '${env:RULES_API_URL}',
   },
   // A rule reads products and product types to decide, and writes category
   // membership. It reads categories to name a rule's target. Nothing here
