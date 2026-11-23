@@ -4,7 +4,30 @@
  * Freely available, AS IS and UNSUPPORTED. See LICENSE.
  */
 
-import { PERMISSIONS, entryPointUriPath } from './src/constants';
+/**
+ * No imports, deliberately. This file is evaluated by Node in the Connect
+ * container, where importing a source module (./src/constants) is a bet on that
+ * runtime's module resolution. The browser bundle derives the same values from
+ * src/constants.ts, so keep the two in step.
+ */
+const entryPointUriPath =
+  process.env.ENTRY_POINT_URI_PATH || 'auto-categorization';
+
+// `acme-auto-categorization` -> ViewAcmeAutoCategorization. A numeric segment is
+// rendered as `/N`, as appkit's entryPointUriPathToPermissionKeys does.
+const pascalCase = entryPointUriPath
+  .split('-')
+  .map((part) =>
+    /^\d+$/.test(part)
+      ? `/${part}`
+      : part.charAt(0).toUpperCase() + part.slice(1)
+  )
+  .join('');
+
+const PERMISSIONS = {
+  View: `View${pascalCase}`,
+  Manage: `Manage${pascalCase}`,
+};
 
 /**
  * The rule builder, as a place of its own in the Merchant Center.

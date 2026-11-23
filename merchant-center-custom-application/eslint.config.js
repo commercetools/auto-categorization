@@ -10,6 +10,8 @@ const graphqlPlugin = require('@graphql-eslint/eslint-plugin');
 const mcAppConfig = require('@commercetools-frontend/eslint-config-mc-app');
 
 module.exports = [
+  // The build output is minified bundles, not source.
+  { ignores: ['public/**'] },
   ...mcAppConfig,
   {
     files: ['**/*.ctp.graphql'],

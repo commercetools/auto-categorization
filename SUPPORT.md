@@ -46,9 +46,6 @@ before you do:
   `MANAGE_PERMISSION` all meet. With a different path and nothing else moved, every Merchant
   Center request is refused with 403, and the path cannot be changed afterwards.
   [Permission names](README.md#permission-names) has the whole rule.
-- **`tools/` drives a real Project.** Those scripts read credentials from a `.env` you point them
-  at and write to the catalog. Nothing in `connect.yaml` references the folder, so it is never
-  deployed, but running it is a real run against your Project rather than a dry run.
 
 ## If you need help
 
@@ -65,8 +62,8 @@ before you do:
 
 A useful report names which of the six applications it came from, what the rule was, and what you
 expected the product's categories to be. Two things reproduce most problems without a deployment
-in the way: the rule builder's preview, and `npm run preflight` for anything that looks like a
-build or dependency failure.
+in the way: the rule builder's preview, and a build of the one application folder on its own for anything
+that looks like a build or dependency failure.
 
 The connector logs a correlation key on every pass (`category:<id>:<version>` for a
 notification, the rule key for a run), and the last pass per rule is in the

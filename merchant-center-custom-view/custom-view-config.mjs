@@ -22,7 +22,8 @@ const config = {
       initialProjectKey: 'my-project-key',
       // Render against a category details page locally, which is the only
       // place this panel means anything.
-      hostUriPath: '/my-project-key/categories/00000000-0000-0000-0000-000000000000/general',
+      hostUriPath:
+        '/my-project-key/categories/00000000-0000-0000-0000-000000000000/general',
     },
     production: {
       customViewId: '${env:CUSTOM_VIEW_ID}',
@@ -49,9 +50,7 @@ const config = {
       manage: ['manage_products', 'manage_key_value_documents'],
     },
   ],
-  labelAllLocales: [
-    { locale: 'en', value: 'Auto-categorization' },
-  ],
+  labelAllLocales: [{ locale: 'en', value: 'Auto-categorization' }],
   type: 'CustomPanel',
   typeSettings: {
     size: 'LARGE',

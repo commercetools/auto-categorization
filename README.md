@@ -30,8 +30,7 @@ are committed, and `npm run check:shared` fails if they drift.
 Vendored rather than linked as a `file:` dependency, because Connect builds
 an application from its own folder: `../common-connect` is not reachable
 there at install time or at build time, so the dependency cannot resolve and
-`npm ci` fails. `npm run simulate:connect` reproduces those conditions
-locally in about a minute.
+`npm ci` fails.
 
 ## The one thing to understand
 
@@ -249,67 +248,6 @@ Merchant Center under Settings:
 
 Undeploy removes both. Rules and run history stay, so reinstalling picks up
 where it left off.
-
-## Running the checks
-
-```bash
-npm run install:all
-npm run predeploy
-```
-
-Build, then the shared-code drift check, then 183 tests across the five
-backend packages, then lint. `npm run typecheck` additionally covers the two
-Merchant Center packages.
-
-Their bundles build separately, and `mc-scripts` resolves the
-`${env:...}` placeholders in their config at build time — Connect supplies
-these from `connect.yaml`, so building by hand means supplying them yourself:
-
-```bash
-ENTRY_POINT_URI_PATH=auto-categorization CLOUD_IDENTIFIER=gcp-us \
-CUSTOM_APPLICATION_ID=… CUSTOM_VIEW_ID=… \
-APPLICATION_URL=https://example.com RULES_API_URL=https://example.com \
-npm run build:mc
-```
-
-There is no CI workflow. `predeploy` is the gate.
-
-Before staging a new tag, run the whole pre-flight — it is the three
-things Connect's validation pipeline checks, in about two minutes rather
-than the ten each round trip through the platform costs:
-
-```bash
-npm run preflight
-```
-
-That is `predeploy`, plus `npm audit --omit=dev` on every application, plus
-a build of each application in isolation. Connect's own report gives step
-titles only (`Build connector failed`); the log text behind it is reachable
-only through the Merchant Center's Connect UI, under Manage connectors →
-the connector → Preview Report → View more details.
-
-Connect runs a dependency scan and fails on any high-severity advisory, so
-every application keeps a clean production tree.
-
-Three things keep it that way, and are worth knowing before adding a
-dependency. Logging is thirty lines of `JSON.stringify` rather than a
-logging library, because the obvious one pulls in winston and lodash.
-`rules-api` pins Express through an override scoped to
-`@commercetools-backend/express`, which would otherwise bring an older
-Express along with it — the override is deliberately *not* global, because
-the other applications run Express 5 and a global pin would hand their
-router a `path-to-regexp` that cannot parse their routes. And the Merchant
-Center packages keep their test and lint tooling in `devDependencies`,
-where the starter puts some of it under `dependencies`.
-
-`tools/` holds two scripts for driving a real Project — a live rule pass
-and a dry run of many rule shapes at once. Nothing in `connect.yaml`
-references that folder, so it is never deployed.
-
-```bash
-tools/run-live-check.sh <path-to-.env> TARGET_CATEGORY_KEY=new-arrivals RULE_DAYS=30
-SCRIPT=rule-shapes.mjs tools/run-live-check.sh <path-to-.env> SCRIPT=rule-shapes.mjs
-```
 
 ## Poison messages and replay
 

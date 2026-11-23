@@ -9,25 +9,15 @@ personal data.
 
 ## Before you open a PR
 
-```bash
-npm run install:all
-npm run predeploy     # build, shared-code drift check, unit tests, lint
-```
-
-`predeploy` is the gate for every change. The repository has no CI, so a green `predeploy` is what
-keeps the next clone building.
-
-Before a change that will be staged as a connector tag, run the whole pre-flight:
+Run the tests and the build of the package you changed, from its own folder:
 
 ```bash
-npm run preflight     # predeploy, plus npm audit --omit=dev, plus an isolated build of each application
+npm ci && npm test && npm run build
 ```
 
-That is the three things Connect's own validation pipeline checks, in about two minutes rather
-than the ten each round trip through the platform costs. `npm run simulate:connect` is the part
-worth knowing about: it builds each application from its own folder with nothing above it on
-disk, which is the condition Connect builds under and the one that catches a cross-package
-import.
+Each application builds from its own folder, the way Connect builds it, so a change that passes
+there keeps the next clone building. After touching `common-connect`, run `npm run check:shared`
+from the repository root.
 
 ## Shared code is vendored, not linked
 
@@ -76,7 +66,7 @@ worth knowing before you add something:
 
 ## Style
 
-Prettier and ESLint are configured per package; `npm run lint` is in `predeploy`. Comments should
+Prettier and ESLint are configured per package; `npm run lint` runs in each package. Comments should
 explain why something is the way it is, especially where the platform forced it. Those are the
 notes that save the next person an afternoon.
 
